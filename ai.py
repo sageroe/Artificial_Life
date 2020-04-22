@@ -36,12 +36,29 @@ class pop(pygame.sprite.Sprite):
     def update(self,screen):
         self.move(screen)
 
+class food(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface([10, 10])
+        self.image.fill([100,0,0])
+        self.rect = int(pos[0]),int(pos[1])
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
 
 def create_village(population, speed):
     village = pygame.sprite.Group()
     for i in range(population):
         village.add(pop([random.uniform(0,480),random.uniform(0,360)], speed ))
     return village
+
+def create_stack(amount):
+    stack = pygame.sprite.Group()
+    for i in range(amount):
+        stack.add(food([random.uniform(0,480),random.uniform(0,360)]))
+    return stack
+
 
 size = 10
 green = 0,100,0
@@ -50,11 +67,11 @@ screen = pygame.display.set_mode(size)
 background = screen
 screen.fill(green)
 #creating a first inhabitant
-villager = pop([random.uniform(0,480),random.uniform(0,360)], 3)
+villager = pop([random.uniform(0,470),random.uniform(0,350)], 3)
 
 village = create_village(10,5)
-
-
+fruit_1 = food([120,150])
+stack = create_stack(10)
 pygame.init()
 pygame.display.flip()
 QUIT = pygame.QUIT
@@ -65,6 +82,8 @@ while True:
             sys.exit()
     screen.fill(green)
     village.update(screen)
+    fruit_1.draw(screen)
     village.draw(screen)
+    stack.draw(screen)
     pygame.display.update()
     pygame.time.delay(100)
