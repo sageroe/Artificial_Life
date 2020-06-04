@@ -5,14 +5,14 @@ import sys
 import random
 class pop(pygame.sprite.Sprite):
     #constructor, pass in x and y as position of the pop, and speed[int] for defining speed
-    def __init__(self, pos, speed):
+    def __init__(self, pos = [240,180], speed=5, color = [0,0,100], rect = [10,10]):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([10, 10])
-        self.image.fill([0,0,100])
-        self.rect = pygame.Rect(int(pos[0]),int(pos[1]),10,10)
-        self.radius = 100
+        self.image = pygame.Surface([rect[0],rect[1]])
+        self.image.fill(color)
+        self.rect = pygame.Rect(int(pos[0]),int(pos[1]),rect[0],rect[1])
+        self.radius = 50
         self.speed = speed
-        self.belly = 0
+        self.belly = 1
     def draw(self, screen):
             screen.blit(self.image, self.rect)
 
@@ -42,8 +42,10 @@ class pop(pygame.sprite.Sprite):
         angle = math.atan2(tan[0],tan[1])
         self.move(angle)
 
+
     def update(self):
         self.move()
+
 
 class food(pygame.sprite.Sprite):
     #class for food objects, with size(rect) to enable rectangle collision detection, and radius to enable circle collision detection
@@ -75,13 +77,46 @@ def sight(self, other):
                     pops.go_to(point[j])
         else:
             pops.move()
-#metoda opodwiadająca za wykrywanie kolizji i zjadanie jedzenia
 
+
+def run_away(self):
+    population = self.sprites()
+    for pops in population:
+        pos = pops.rect
+        if pos[0]>240 and pos[1]>180:
+            pops.move(math.pi/4)
+        elif pos[0]<240 and pos[1]>180:
+            pops.move(-math.pi/4)
+        elif pos[0]<240 and pos[1]<180:
+            pops.move(math.pi+math.pi/4)
+        elif pos[0]>240 and pos[1]<180:
+            pops.move(math.pi-math.pi/4)
+
+def hide(self,where):
+    sight(self, where)
+
+
+#metoda opodwiadająca za wykrywanie kolizji i zjadanie jedzenia
 def eat(self, other):
-    ate =  pygame.sprite.groupcollide(self, other, False,True)
+    ate =  pygame.sprite.groupcollide(self, other, False ,True)
     for lucky in ate:
         lucky.belly = lucky.belly + len(ate[lucky])
 
+
+
+def protected(fort,other):
+    global safe
+    safe_villager = pygame.sprite.groupcollide(fort, other, False, True)
+
+    for forts in safe_villager:
+        for villager in safe_villager[forts]:
+            safe.add(villager)
+
+
+def go_outside(self,other):
+    for pop in self:
+        pop.remove(self)
+        other.add(pop)
 
 #Funkcja oblicza dystans między dwoma obiektami
 def dist_angle(self, other):
@@ -100,45 +135,152 @@ def create_village(population, speed):
 #Funkcja tworzy grupę z jedzeniem
 def create_stack(amount):
     stack = pygame.sprite.Group()
+    stack.color = [0,0,100]
     for i in range(amount):
         stack.add(food([random.uniform(0,470),random.uniform(0,350)]))
     return stack
+
+#tworzy miejsca w których villager może się ukryć
+def create_forts():
+    stack = pygame.sprite.Group()
+    black = [0,0,0]
+    stack.add(pop(pos = [120,90],rect = [20,20], color = black ))
+    stack.add(pop(pos = [360,270],rect = [20,20], color = black))
+    stack.add(pop(pos = [360,90],rect = [20,20], color = black))
+    stack.add(pop(pos = [120,270],rect = [20,20],color = black))
+    return stack
 #jeżeli poziom jedzenia spadnie poniżej 40 obiektów, metoda wygeneruje do 20 obiektów
+
 def grow_food(self):
-    if len(self.sprites())<40:
-        for i in range(random.randrange(21)):
-            self.add(food([random.uniform(0,470),random.uniform(0,350)]))
+    for i in range(random.randrange(21)):
+        self.add(food([random.uniform(0,470),random.uniform(0,350)]))
 #metoda odpowiedzialna za rysowanie wszystkiego na ekranie monitora
+
+def create_wolfpack(population, speed):
+        wolfpack = pygame.sprite.Group()
+        wolfpack.color = [220,220,220]
+        for i in range(population):
+            wolfpack.add(pop([random.uniform(0,470),random.uniform(0,350)], speed, wolfpack.color  ))
+        return wolfpack
+def redeploy(self):
+    pack = self.sprites()
+    for i in range(len(pack)):
+        if i%4==0:
+            pack[i].rect[0]=0
+            pack[i].rect[1]=random.uniform(0,350)
+        if i%4==1:
+            pack[i].rect[0]=random.uniform(0,470)
+            pack[i].rect[1]=0
+        if i%4==2:
+            pack[i].rect[0]=random.uniform(0,470)
+            pack[i].rect[1]=350
+        if i%4==3:
+            pack[i].rect[0]=470
+            pack[i].rect[1]=random.uniform(0,350)
+def multiply(self,col=[0,0,100] ):
+    all = self.copy()
+    for sprite in all.sprites():
+        while sprite.belly>2:
+            self.add(pop([sprite.rect[0]+random.randint(0,10),sprite.rect[1]+random.randint(0,10)],sprite.speed, color = col))
+            sprite.belly = sprite.belly - 2
+
+        if sprite.belly == 0:
+            sprite.kill()
+        sprite.belly = sprite.belly -1
+
 def drawscreen(screen):
+    global i
     screen.fill(green)
     village.draw(screen)
     stack.draw(screen)
+    forts.draw(screen)
+    wolfpack.draw(screen)
+    screen.blit(alive_villagers, [480,0])
+    screen.blit(alive_wolves, [480,30])
+    screen.blit(day, [480,60])
+
+#    man.draw(screen)
     pygame.display.update()
     pygame.time.delay(100)
 
-
-
-
-size = 10
+pygame.init()
+#setting up colours
 green = 0,100,0
-size = width, length = 480,360
-screen = pygame.display.set_mode(size)
+grey = 220,220,220
 
+#setting up screen1
+size = 10
+size = width, length = 720,360
+screen = pygame.display.set_mode(size)
 screen.fill(green)
-#creating a first inhabitant
+
+#setting up text
+
+
+
+#creating a first inhabitants
+Year = 0
+safe = pygame.sprite.Group()
+#man = pop()
 population = 100
 village = create_village(population,5)
-stack = create_stack(population)
-pygame.init()
+stack = create_stack(int(0/4))
+wolfpack = create_wolfpack(int(1), 7)
+forts = create_forts()
+days = 200
+font = pygame.font.Font('freesansbold.ttf', 16)
+alive_villagers = font.render('alive villagers:'+str(len(village)), True, [0,0,0], green)
+alive_wolves = font.render('alive wolves:'+str(len(wolfpack)), True, [0,0,0], green)
+day = font.render('Year:'+str(Year)+'Day:'+str(0), True, [0,0,0], green)
+
 pygame.display.flip()
 QUIT = pygame.QUIT
 KEYDOWN = pygame.KEYDOWN
 
+
+
 while True:
-    for event in pygame.event.get():
-        if event.type in (QUIT, KEYDOWN):
-            sys.exit()
-    sight(village,stack)
-    eat(village, stack)
-    grow_food(stack)
-    drawscreen(screen)
+
+    for i in range(days):
+        for event in pygame.event.get():
+            if event.type in (QUIT, KEYDOWN):
+                sys.exit()
+
+
+        alive_villagers = font.render('alive villagers:'+str(len(village)+len(safe)), True, [0,0,0], green)
+        alive_wolves = font.render('alive wolves:'+str(len(wolfpack)), True, [0,0,0], green)
+        day = font.render('Year:'+str(Year)+'      Day:'+str(i), True, [0,0,0], green)
+
+        if i<=50:
+            #w "roku" występuje podział na okresy
+            sight(village,stack)
+            eat(village, stack)
+            run_away(wolfpack)
+        if i>50 and i <=100:
+            sight(wolfpack,village)
+            hide(village,forts)
+            eat(wolfpack, village)
+            protected(forts,village)
+            eat(village, stack)
+        if i>100 and i<=150:
+            village.update()
+            run_away(wolfpack)
+            eat(village, stack)
+            go_outside(safe,village)
+            run_away(wolfpack)
+        if i>150:
+            sight(village,stack)
+            eat(village,stack)
+
+        if i%5 == 0:
+            grow_food(stack)
+            pass
+        if i%100 == 0 :
+            multiply(village)
+            multiply(safe)
+        if i==(days-1):
+            multiply(wolfpack, grey)
+        if i == 50:
+            redeploy(wolfpack)
+        drawscreen(screen)
+    Year = Year +1
